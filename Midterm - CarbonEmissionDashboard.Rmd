@@ -1,0 +1,166 @@
+---
+title: "A Brief Glanse At The World's Waste"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(ggtext)
+library(flexdashboard)
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+library(tidyverse)
+library(janitor)
+library(readxl)
+library(lubridate)
+ce <- read_rds("data/process/Emission Sector Cleaned.rds")
+gyce <- read_rds("data/process/Grouped Year Emission Cleaned.rds")
+GDP25Clean <- read_rds("data/process/Yearly GDP By Country Cleaned.rds")
+GE <- read.csv("data/raw/Global Emissions 2.csv")
+China <- read.csv("data/raw/co2-emissions-china-vs-world.csv")
+GEco2Country6 <- GE |> 
+  filter(country == "China" | country == "Japan" |country == "Germany" | country == "United Kingdoms" | country == "United States" | country == "France")
+CN25Perc <- China |>
+  filter(date == 2025)
+```
+
+Column {data-width=400}
+-----------------------------------------------------------------------
+
+### Industrial Co2 Emission By Country
+
+```{r message=FALSE, warning=FALSE}
+gyce |> 
+  group_by(date) |> 
+  filter(sector == 'Industry') |> 
+  ggplot(aes(x = date, y = value, fill = country)) + 
+  geom_bar(position = 'dodge', stat = "identity", width = 0.9) +
+  labs(title = "Industrial Carbon Emissions Output By Country",
+       caption = "China had made statements on decreasing pollution and subsequently acted on them in these past years. These recent years, the US has been steadily peeling away on its pledges of sustainability.",
+       x = "Years",
+       y = "Industrial Carbon Emissions") +
+  theme(
+    plot.subtitle = element_textbox_simple(margin = margin(b = 10)),
+    plot.caption = element_textbox_simple(margin = margin(b = 10)),
+    plot.caption.position = "plot",
+    plot.subtitle.position = "plot"
+  ) 
+
+```
+
+### China's Share of Carbon Emissions {data-height=200}
+```{r message=FALSE, warning=FALSE}
+CN25Rate <- CN25Perc$china_share
+gauge(CN25Rate, min = 0, max = 50, symbol = '%', gaugeSectors(
+  success = c(0, 5), warning = c(6, 10), danger = c(11, 100)
+))
+```
+
+Column {.tabset}
+-------------------------------------
+   
+
+### China's Dominance in Co2 Emissions
+
+```{r}
+ce |>
+  filter(sector == 'Industry') |> 
+  ggplot(aes(x = date, y = value, color = country)) +
+  geom_line() +
+  labs(
+    title = "Carbon Emissions From Industry By Country",
+    subtitle = "A brief glanse into the amount of carbon emissions released by the industrial sector of each country.",
+    caption = "China being the leader of carbon emissions by a staggering amount is no suprise. China has committed itself into being the world's supply chain. Sharp drops every Q1 each year are due to external variables (seasonal shift, holidays).",
+    x = "Year",
+    y = "Carbon Emission Values"
+) +
+  theme(
+    plot.subtitle = element_textbox_simple(margin = margin(b = 8)),
+    plot.caption = element_textbox_simple(margin = margin(b = 8)),
+    plot.caption.position = "plot",
+    plot.subtitle.position = "plot"
+  )
+
+```
+
+
+
+
+### China GDP Chart
+
+```{r}
+GDP25Clean |>
+  filter(Country == 'China') |> 
+  ggplot(aes(x = year, y = gdp)) +
+  geom_line(linewidth = 0.7) +
+  labs(x = "Year",
+       y = "GDP",
+       title = "China's Annual GDP",
+       subtitle = "China's annual GPD shows continous growth.",
+       caption = "The continous growth of China's GDP, paired up with its decrease in industrial carbon emissions, suggests that it has found active sustainable substitutes for its industrial facilities") +
+  theme(
+    plot.subtitle = element_textbox_simple(margin = margin(b = 10)),
+    plot.caption = element_textbox_simple(margin = margin(b = 10)),
+    plot.caption.position = "plot",
+    plot.subtitle.position = "plot"
+  ) 
+```
+
+### China Co2 Y21 - Y25
+
+```{r}
+GE |>
+  filter(country == 'China') |> 
+  ggplot(aes(x = year, y = co2)) +
+  geom_line(linewidth = 0.7) +
+  labs(x = "Year", y = "National Carbon Emission",
+       title = "China's National Carbon Emission",
+       subtitle = "China's national co2 output still suggests there is a lot more to improve on")
+```
+
+### China's Share
+
+```{r}
+China |> 
+  group_by(date) |> 
+  ggplot(aes(x = date, y = china_share)) + 
+  geom_line(linewidth = 0.7) +
+  labs(x = "Year", y = "China's Share of Co2",
+       title = "China's Slice Of The Co2 Pie",
+       subtitle = "A look into how much China contributes to global co2 emissions.",
+       caption = "Despite its increasing numbers, China's total contribution towards the co2 emissions has stayed relatively unchanged. The recent increases are contributions from other countries.") +
+  theme(
+    plot.subtitle = element_textbox_simple(margin = margin(b = 10)),
+    plot.caption = element_textbox_simple(margin = margin(b = 10)),
+    plot.caption.position = "plot",
+    plot.subtitle.position = "plot"
+)
+```
+
+### Oil Co2 
+
+```{r}
+GEco2Country6 |>
+  ggplot(aes(x = year, y = oil_co2, color = country)) +
+  geom_line() +
+  geom_point(data = filter(GEco2Country6, year %in% 2021:2025),
+    aes(fill = factor(year)),
+    shape = 21,
+    size = 3,
+    stroke = 1
+  ) +
+  scale_fill_brewer(palette = "YlOrRd", name = "Year") +
+  labs(x = "Year", y = "Co2 From Oil",
+       title = "Who Loves Oil?",
+       subtitle = "Taking a closer look into what contributes to the total co2.",
+       caption = "At first glance, this is unexpected. The largest contributor to global emissions comes second when it comes to oil's carbon footprint. Not only does the majority of the US population own a car, China's auto industry has been actively moving towards EV for quite some time now. It held firm during what was supposed to be an oil shock after the Hormuz straight had been closed down.") +
+  theme(
+    plot.subtitle = element_textbox_simple(margin = margin(b = 10)),
+    plot.caption = element_textbox_simple(margin = margin(b = 10)),
+    plot.caption.position = "plot",
+    plot.subtitle.position = "plot"
+)
+```
